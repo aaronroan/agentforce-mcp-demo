@@ -469,3 +469,131 @@ fields: 'id'
 console.warn("addCommentHelper requires Google Drive API and is not implemented.");
 throw new NotImplementedError("Adding comments requires Drive API setup and is not yet implemented.");
 }
+
+// --- Image Insertion Helpers ---
+
+/**
+ * Inserts an inline image into a document from a publicly accessible URL
+ * @param docs - Google Docs API client
+ * @param documentId - The document ID
+ * @param imageUrl - Publicly accessible URL to the image
+ * @param index - Position in the document where image should be inserted (1-based)
+ * @param width - Optional width in points
+ * @param height - Optional height in points
+ * @returns Promise with batch update response
+ */
+export async function insertInlineImage(
+    docs: Docs,
+    documentId: string,
+    imageUrl: string,
+    index: number,
+    width?: number,
+    height?: number
+): Promise<docs_v1.Schema$BatchUpdateDocumentResponse> {
+    // Validate URL format
+    try {
+        new URL(imageUrl);
+    } catch (e) {
+        throw new UserError(`Invalid image URL format: ${imageUrl}`);
+    }
+
+    // Build the insertInlineImage request
+    const request: docs_v1.Schema$Request = {
+        insertInlineImage: {
+            location: { index },
+            uri: imageUrl,
+            ...(width && height && {
+                objectSize: {
+                    height: { magnitude: height, unit: 'PT' },
+                    width: { magnitude: width, unit: 'PT' }
+                }
+            })
+        }
+    };
+
+    return executeBatchUpdate(docs, documentId, [request]);
+}
+
+/**
+ * Uploads a local image file to Google Drive and returns its public URL
+ * @param drive - Google Drive API client
+ * @param localFilePath - Path to the local image file
+ * @param parentFolderId - Optional parent folder ID (defaults to root)
+ * @returns Promise with the public webContentLink URL
+ */
+export async function uploadImageToDrive(
+    drive: any, // drive_v3.Drive type
+    localFilePath: string,
+    parentFolderId?: string
+): Promise<string> {
+    const fs = await import('fs');
+    const path = await import('path');
+
+    // Verify file exists
+    if (!fs.existsSync(localFilePath)) {
+        throw new UserError(`Image file not found: ${localFilePath}`);
+    }
+
+    // Get file name and mime type
+    const fileName = path.basename(localFilePath);
+    const mimeTypeMap: { [key: string]: string } = {
+        '.jpg': 'image/jpeg',
+        '.jpeg': 'image/jpeg',
+        '.png': 'image/png',
+        '.gif': 'image/gif',
+        '.bmp': 'image/bmp',
+        '.webp': 'image/webp',
+        '.svg': 'image/svg+xml'
+    };
+
+    const ext = path.extname(localFilePath).toLowerCase();
+    const mimeType = mimeTypeMap[ext] || 'application/octet-stream';
+
+    // Upload file to Drive
+    const fileMetadata: any = {
+        name: fileName,
+        mimeType: mimeType
+    };
+
+    if (parentFolderId) {
+        fileMetadata.parents = [parentFolderId];
+    }
+
+    const media = {
+        mimeType: mimeType,
+        body: fs.createReadStream(localFilePath)
+    };
+
+    const uploadResponse = await drive.files.create({
+        requestBody: fileMetadata,
+        media: media,
+        fields: 'id,webViewLink,webContentLink'
+    });
+
+    const fileId = uploadResponse.data.id;
+    if (!fileId) {
+        throw new Error('Failed to upload image to Drive - no file ID returned');
+    }
+
+    // Make the file publicly readable
+    await drive.permissions.create({
+        fileId: fileId,
+        requestBody: {
+            role: 'reader',
+            type: 'anyone'
+        }
+    });
+
+    // Get the webContentLink
+    const fileInfo = await drive.files.get({
+        fileId: fileId,
+        fields: 'webContentLink'
+    });
+
+    const webContentLink = fileInfo.data.webContentLink;
+    if (!webContentLink) {
+        throw new Error('Failed to get public URL for uploaded image');
+    }
+
+    return webContentLink;
+}
