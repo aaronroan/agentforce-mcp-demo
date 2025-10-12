@@ -25,6 +25,7 @@ This comprehensive server uses the Model Context Protocol (MCP) and the `fastmcp
 ### Document Structure
 - **Tables:** Create tables with `insertTable`
 - **Page Breaks:** Insert page breaks with `insertPageBreak`
+- **Images:** Insert images from URLs with `insertImageFromUrl`, or upload local images with `insertLocalImage`
 - **Experimental Features:** Tools like `fixListFormatting` for automatic list detection
 
 ### 🆕 Comment Management
@@ -215,11 +216,59 @@ Once configured, you should be able to use the tools in your chats with Claude:
 - **Text Styling**: "Use `applyTextStyle` to make the text 'Important Section' bold and red (#FF0000) in document `YOUR_GOOGLE_DOC_ID`."
 - **Paragraph Styling**: "Use `applyParagraphStyle` to center-align the paragraph containing 'Title Here' in document `YOUR_GOOGLE_DOC_ID`."
 - **Table Creation**: "Insert a 3x4 table at index 500 in document `YOUR_GOOGLE_DOC_ID` using the `insertTable` tool."
+- **Image Insertion**: "Use `insertImageFromUrl` to insert an image from 'https://example.com/image.png' at index 100 in document `YOUR_GOOGLE_DOC_ID`."
+- **Local Image Upload**: "Use `insertLocalImage` to upload '/path/to/image.jpg' and insert it at index 200 in document `YOUR_GOOGLE_DOC_ID`."
 - **Legacy Formatting**: "Use `formatMatchingText` to find the second instance of 'Project Alpha' and make it blue (#0000FF) in doc `YOUR_GOOGLE_DOC_ID`."
 
 Remember to replace `YOUR_GOOGLE_DOC_ID` with the actual ID from a Google Doc's URL (the long string between `/d/` and `/edit`).
 
 Claude will automatically launch your server in the background when needed using the command you provided. You do **not** need to run `node ./dist/server.js` manually anymore.
+
+---
+
+## Image Insertion
+
+This server provides two ways to insert images into Google Documents:
+
+### 1. Insert from Public URL (`insertImageFromUrl`)
+
+Inserts an image directly from a publicly accessible URL. The image URL must be accessible without authentication.
+
+**Parameters:**
+- `documentId`: The Google Document ID
+- `imageUrl`: Publicly accessible URL (http:// or https://)
+- `index`: Position in the document (1-based indexing)
+- `width` (optional): Image width in points
+- `height` (optional): Image height in points
+
+**Example:**
+```
+"Insert an image from https://example.com/logo.png at index 100 in document YOUR_DOC_ID"
+```
+
+### 2. Upload Local Image (`insertLocalImage`)
+
+Uploads a local image file to Google Drive and inserts it into the document. This is a two-step process that:
+1. Uploads the image to Google Drive (by default to the same folder as the document)
+2. Makes the image publicly readable
+3. Inserts the image into the document using its Drive URL
+
+**Parameters:**
+- `documentId`: The Google Document ID
+- `localImagePath`: Absolute path to the local image file
+- `index`: Position in the document (1-based indexing)
+- `width` (optional): Image width in points
+- `height` (optional): Image height in points
+- `uploadToSameFolder` (optional, default: true): If true, uploads to the document's folder; if false, uploads to Drive root
+
+**Supported formats:** .jpg, .jpeg, .png, .gif, .bmp, .webp, .svg
+
+**Example:**
+```
+"Upload and insert the image at /Users/myname/Pictures/chart.png at index 200 in document YOUR_DOC_ID with width 400 and height 300"
+```
+
+**Note:** The uploaded image will be made publicly readable so it can be displayed in the document. The image file will remain in your Google Drive and can be managed separately.
 
 ---
 
