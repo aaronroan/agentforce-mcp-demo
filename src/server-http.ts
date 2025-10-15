@@ -354,8 +354,8 @@ console.error("Starting Google Docs MCP server in HTTP mode...");
       const configToUse = {
           transportType: "sse" as const,
           sse: {
-              endpoint: "/sse",
-              port: parseInt(PORT as string)
+              endpoint: "/sse" as const,
+              port: typeof PORT === 'string' ? parseInt(PORT) : PORT
           }
       };
 
