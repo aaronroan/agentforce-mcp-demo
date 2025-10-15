@@ -21,7 +21,7 @@ steps:
       - 'gcr.io/$PROJECT_ID/google-docs-mcp:latest'
     
   # Deploy to Cloud Run
-  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk:slim'
     entrypoint: gcloud
     args:
       - 'run'

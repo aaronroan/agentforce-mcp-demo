@@ -1,0 +1,50 @@
+# Simplified Cloud Build configuration with better error handling
+steps:
+  # Build the container image
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'build'
+      - '-t'
+      - 'gcr.io/$PROJECT_ID/google-docs-mcp:$SHORT_SHA'
+      - '-t'
+      - 'gcr.io/$PROJECT_ID/google-docs-mcp:latest'
+      - '.'
+    
+  # Push the container image to Container Registry
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'push'
+      - 'gcr.io/$PROJECT_ID/google-docs-mcp:$SHORT_SHA'
+      
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'push'
+      - 'gcr.io/$PROJECT_ID/google-docs-mcp:latest'
+    
+  # Deploy to Cloud Run (with error handling)
+  - name: 'gcr.io/cloud-builders/gcloud'
+    args:
+      - 'run'
+      - 'deploy'
+      - 'google-docs-mcp'
+      - '--image=gcr.io/$PROJECT_ID/google-docs-mcp:$SHORT_SHA'
+      - '--region=us-central1'
+      - '--platform=managed'
+      - '--allow-unauthenticated'
+      - '--port=8080'
+      - '--memory=512Mi'
+      - '--cpu=1'
+      - '--timeout=300'
+      - '--max-instances=10'
+      - '--update-secrets=GOOGLE_CREDENTIALS=google-docs-credentials:latest,GOOGLE_TOKEN=google-docs-token:latest'
+
+images:
+  - 'gcr.io/$PROJECT_ID/google-docs-mcp:$SHORT_SHA'
+  - 'gcr.io/$PROJECT_ID/google-docs-mcp:latest'
+
+options:
+  machineType: 'N1_HIGHCPU_8'
+  logging: CLOUD_LOGGING_ONLY
+  
+timeout: '1200s'  # 20 minutes timeout
+
