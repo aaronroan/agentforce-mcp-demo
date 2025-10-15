@@ -3,7 +3,7 @@
 import { FastMCP, UserError } from 'fastmcp';
 import { z } from 'zod';
 import { google, docs_v1, drive_v3 } from 'googleapis';
-import { authorize } from './auth.js';
+import { authorize } from './auth-cloudrun.js';
 import { OAuth2Client } from 'google-auth-library';
 
 // Import types and helpers
