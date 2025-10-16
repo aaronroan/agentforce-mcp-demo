@@ -1,0 +1,226 @@
+# API Gateway configuration for Google Docs MCP REST API
+# This creates a REST API that wraps the MCP server for Salesforce integration
+
+# API Gateway configuration file
+api_config.yaml:
+api: google-docs-mcp-api
+api_version: v1
+title: Google Docs MCP REST API
+description: REST API wrapper for Google Docs MCP server to integrate with Salesforce Agentforce
+
+# Enable API Gateway
+api_gateway_config.yaml:
+swagger: "2.0"
+info:
+  title: Google Docs MCP REST API
+  description: REST API wrapper for Google Docs MCP server
+  version: 1.0.0
+host: google-docs-mcp-api-gateway-403993907509.us-central1.run.app
+schemes:
+  - https
+securityDefinitions:
+  oauth2:
+    type: oauth2
+    flow: clientCredentials
+    tokenUrl: https://oauth2.googleapis.com/token
+    scopes:
+      google-docs-mcp: Access Google Docs MCP API
+security:
+  - oauth2: [google-docs-mcp]
+paths:
+  /health:
+    get:
+      summary: Health check endpoint
+      operationId: healthCheck
+      responses:
+        200:
+          description: Service is healthy
+          schema:
+            type: object
+            properties:
+              status:
+                type: string
+                example: "OK"
+              timestamp:
+                type: string
+                format: date-time
+  /api/docs/recent:
+    post:
+      summary: Get recent Google Docs
+      operationId: getRecentDocs
+      security:
+        - oauth2: [google-docs-mcp]
+      parameters:
+        - name: body
+          in: body
+          required: true
+          schema:
+            type: object
+            properties:
+              maxResults:
+                type: integer
+                minimum: 1
+                maximum: 50
+                default: 10
+              daysBack:
+                type: integer
+                minimum: 1
+                maximum: 365
+                default: 30
+      responses:
+        200:
+          description: Recent Google Docs retrieved successfully
+          schema:
+            type: object
+            properties:
+              success:
+                type: boolean
+                example: true
+              data:
+                type: string
+                description: Formatted list of recent documents
+        500:
+          description: Internal server error
+          schema:
+            type: object
+            properties:
+              success:
+                type: boolean
+                example: false
+              error:
+                type: string
+  /api/docs/read:
+    post:
+      summary: Read Google Doc content
+      operationId: readDoc
+      security:
+        - oauth2: [google-docs-mcp]
+      parameters:
+        - name: body
+          in: body
+          required: true
+          schema:
+            type: object
+            properties:
+              documentId:
+                type: string
+                description: The ID of the Google Document
+              maxLength:
+                type: integer
+                description: Maximum character limit for text output
+            required:
+              - documentId
+      responses:
+        200:
+          description: Document content retrieved successfully
+          schema:
+            type: object
+            properties:
+              success:
+                type: boolean
+                example: true
+              data:
+                type: string
+                description: Document content
+        500:
+          description: Internal server error
+  /api/docs/search:
+    post:
+      summary: Search Google Docs
+      operationId: searchDocs
+      security:
+        - oauth2: [google-docs-mcp]
+      parameters:
+        - name: body
+          in: body
+          required: true
+          schema:
+            type: object
+            properties:
+              searchQuery:
+                type: string
+                description: Search term to find in document names or content
+              maxResults:
+                type: integer
+                minimum: 1
+                maximum: 50
+                default: 10
+            required:
+              - searchQuery
+      responses:
+        200:
+          description: Search results retrieved successfully
+          schema:
+            type: object
+            properties:
+              success:
+                type: boolean
+                example: true
+              data:
+                type: string
+                description: Formatted search results
+        500:
+          description: Internal server error
+  /api/mcp/call:
+    post:
+      summary: Generic MCP tool call
+      operationId: mcpCall
+      security:
+        - oauth2: [google-docs-mcp]
+      parameters:
+        - name: body
+          in: body
+          required: true
+          schema:
+            type: object
+            properties:
+              toolName:
+                type: string
+                description: Name of the MCP tool to call
+              arguments:
+                type: object
+                description: Arguments to pass to the tool
+            required:
+              - toolName
+      responses:
+        200:
+          description: Tool executed successfully
+          schema:
+            type: object
+            properties:
+              success:
+                type: boolean
+                example: true
+              data:
+                type: string
+                description: Tool execution result
+        500:
+          description: Internal server error
+  /api/mcp/tools:
+    get:
+      summary: List available MCP tools
+      operationId: listTools
+      security:
+        - oauth2: [google-docs-mcp]
+      responses:
+        200:
+          description: Tools listed successfully
+          schema:
+            type: object
+            properties:
+              success:
+                type: boolean
+                example: true
+              tools:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    name:
+                      type: string
+                    description:
+                      type: string
+                    parameters:
+                      type: object
+        500:
+          description: Internal server error

@@ -7,22 +7,29 @@
     "test": "node --test tests/",
     "build": "tsc",
     "build:http": "tsc",
+    "build:rest": "tsc",
     "start": "node dist/server.js",
     "start:http": "node dist/server-http.js",
+    "start:rest": "node dist/rest-api-wrapper.js",
     "dev": "tsx src/server.ts",
-    "dev:http": "tsx src/server-http.ts"
+    "dev:http": "tsx src/server-http.ts",
+    "dev:rest": "tsx src/rest-api-wrapper.ts"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "description": "MCP server for Google Docs and Drive with comprehensive document editing, formatting, and file management capabilities",
   "dependencies": {
+    "express": "^4.18.2",
+    "cors": "^2.8.5",
     "fastmcp": "^1.27.7",
     "google-auth-library": "^9.15.1",
     "googleapis": "^148.0.0",
     "zod": "^3.24.2"
   },
   "devDependencies": {
+    "@types/express": "^4.17.21",
+    "@types/cors": "^2.8.17",
     "@types/node": "^22.14.1",
     "tsx": "^4.19.3",
     "typescript": "^5.8.3"
