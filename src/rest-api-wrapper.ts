@@ -112,6 +112,29 @@ async function searchGoogleDocs(args: any) {
   }
 }
 
+async function createDocument(args: any) {
+  try {
+    const { title } = args;
+    
+    if (!title) {
+      throw new Error('title is required');
+    }
+    
+    const response = await googleDocs!.documents.create({
+      requestBody: {
+        title: title
+      }
+    });
+    
+    const docId = response.data.documentId;
+    const docTitle = response.data.title;
+    
+    return `Created document: "${docTitle}"\nDocument ID: ${docId}\nView: https://docs.google.com/document/d/${docId}/edit`;
+  } catch (error: any) {
+    throw new Error(`Failed to create document: ${error.message}`);
+  }
+}
+
 // Available tools registry
 const tools = {
   getRecentGoogleDocs: {
@@ -128,6 +151,11 @@ const tools = {
     name: 'searchGoogleDocs',
     description: 'Searches for Google Documents by name or content',
     execute: searchGoogleDocs
+  },
+  createDocument: {
+    name: 'createDocument',
+    description: 'Creates a new Google Document',
+    execute: createDocument
   }
 };
 
@@ -174,6 +202,7 @@ app.post('/api/docs/search', async (req, res) => {
 // Generic MCP tool call endpoint
 app.post('/api/mcp/call', async (req, res) => {
   try {
+    console.log('Received request:', JSON.stringify(req.body));
     const { toolName, arguments: toolArgs } = req.body;
     
     if (!toolName) {
@@ -185,11 +214,14 @@ app.post('/api/mcp/call', async (req, res) => {
       return res.status(404).json({ success: false, error: `Tool '${toolName}' not found` });
     }
     
+    console.log(`Calling tool: ${toolName} with args:`, JSON.stringify(toolArgs));
     await initializeGoogleClient();
     const result = await tool.execute(toolArgs || {});
+    console.log(`Tool ${toolName} result:`, result);
     res.json({ success: true, data: result });
   } catch (error: any) {
-    res.status(500).json({ success: false, error: error.message });
+    console.error(`Error executing tool ${req.body.toolName}:`, error);
+    res.status(500).json({ success: false, error: error.message, stack: error.stack });
   }
 });
 

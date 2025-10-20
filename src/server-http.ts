@@ -359,9 +359,54 @@ console.error("Starting Google Docs MCP server in HTTP mode...");
           }
       };
 
+      // Add REST endpoint for direct tool calls (for Apex/Agentforce)
+      const express = require('express');
+      const app = express();
+      app.use(express.json());
+      
+      // Health check endpoint
+      app.get('/health', (req: any, res: any) => {
+        res.json({ status: 'healthy', timestamp: new Date().toISOString() });
+      });
+      
+      // REST endpoint to call MCP tools
+      app.post('/mcp/tools/call', async (req: any, res: any) => {
+        try {
+          const { toolName, arguments: toolArgs } = req.body;
+          
+          if (!toolName) {
+            return res.status(400).json({
+              isError: true,
+              content: [{ type: 'text', text: 'toolName is required' }]
+            });
+          }
+          
+          // Call the tool through the server
+          const result = await server.callTool(toolName, toolArgs || {});
+          
+          res.json({
+            content: [{ type: 'text', text: result }],
+            isError: false
+          });
+        } catch (error: any) {
+          console.error('Error calling tool:', error);
+          res.status(500).json({
+            isError: true,
+            content: [{ type: 'text', text: error.message || 'Unknown error' }]
+          });
+        }
+      });
+      
+      // Start Express server
+      app.listen(PORT, () => {
+        console.error(`REST API running on port ${PORT}`);
+        console.error(`Health endpoint: http://localhost:${PORT}/health`);
+        console.error(`MCP tool endpoint: http://localhost:${PORT}/mcp/tools/call`);
+      });
+      
+      // Also start MCP SSE server
       server.start(configToUse);
-      console.error(`MCP Server running on port ${PORT} with SSE transport`);
-      console.error(`SSE endpoint: http://localhost:${PORT}/sse`);
+      console.error(`MCP SSE endpoint: http://localhost:${PORT}/sse`);
 
 } catch(startError: any) {
 console.error("FATAL: Server failed to start:", startError.message || startError);
