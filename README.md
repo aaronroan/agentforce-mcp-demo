@@ -1,8 +1,8 @@
-# Ultimate Google Docs & Drive MCP Server
+# Calling Google Docs MCP Server from Agentforce
 
 ![Demo Animation](assets/google.docs.mcp.1.gif)
 
-Connect Claude Desktop (or other MCP clients) to your Google Docs and Google Drive!
+Connect Agentforce to your Google Docs and Google Drive!
 
 > 🔥 **Check out [15 powerful tasks](SAMPLE_TASKS.md) you can accomplish with this enhanced server!**
 > 📁 **NEW:** Complete Google Drive file management capabilities!
